@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ZSC Editor</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- =====================================================
+         頂端工具列
+         ===================================================== -->
+
+    <div class="toolbar">
+
+        <button
+            type="button"
+            @click="openFile"
+        >
+            開啟
+        </button>
+
+        <button
+            type="button"
+            @click="newFile"
+        >
+            新增
+        </button>
+
+        <button
+            type="button"
+            @click="saveFile"
+        >
+            儲存
+        </button>
+
+        <div class="toolbar-separator"></div>
+
+        <!-- Undo -->
+
+        <button
+            type="button"
+            class="history-button"
+            :disabled="!canUndo"
+            @click="undo"
+            title="上一步（Ctrl+Z）"
+        >
+            ↶ 上一步
+        </button>
+
+        <!-- Redo -->
+
+        <button
+            type="button"
+            class="history-button"
+            :disabled="!canRedo"
+            @click="redo"
+            title="下一步（Ctrl+Y / Ctrl+Shift+Z）"
+        >
+            ↷ 下一步
+        </button>
+
+        <div class="toolbar-separator"></div>
+
+        <!-- 編碼 -->
+
+        <label class="toolbar-label">
+            讀取：
+
+            <select v-model="readEncoding">
+                <option value="auto">
+                    自動
+                </option>
+
+                <option value="big5">
+                    Big5
+                </option>
+
+                <option value="utf-8">
+                    UTF-8
+                </option>
+            </select>
+        </label>
+
+        <label class="toolbar-label">
+            儲存：
+
+            <select v-model="saveEncoding">
+                <option value="big5">
+                    Big5
+                </option>
+
+                <option value="utf-8">
+                    UTF-8
+                </option>
+            </select>
+        </label>
+
+        <div class="toolbar-spacer"></div>
+
+        <span class="encoding-info">
+            {{ encodingText }}
+        </span>
+
+        <span
+            v-if="dirty"
+            class="dirty-indicator"
+        >
+            ● 未儲存
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         檔案拖曳提示
+         ===================================================== -->
+
+    <div
+        v-if="dragging"
+        class="drop-overlay"
+    >
+        <div class="drop-message">
+            將 .zsc 檔案拖曳到這裡
+        </div>
+    </div>
+
+
+    <!-- =====================================================
+         主畫面
+         ===================================================== -->
+
+    <div class="main-layout">
+
+
+        <!-- =================================================
+             左側
+             ================================================= -->
+
+        <aside class="sidebar">
+
+            <!-- 搜尋 -->
+
+            <div class="sidebar-search">
+
+                <input
+                    v-model="searchText"
+                    type="text"
+                    placeholder="搜尋名稱或內容..."
+                >
+
+            </div>
+
+
+            <!-- 分類控制 -->
+
+            <div class="category-toolbar">
+
+                <button
+                    type="button"
+                    @click="expandAllCategories"
+                >
+                    全展開
+                </button>
+
+                <button
+                    type="button"
+                    @click="collapseAllCategories"
+                >
+                    全收合
+                </button>
+
+            </div>
+
+
+            <!-- =================================================
+                 批量刪除
+                 ================================================= -->
+
+            <div class="batch-delete-bar">
+
+                <button
+                    type="button"
+                    class="batch-delete-button"
+                    @click="deleteSelectedItems"
+                    :disabled="
+                        !checkedDeleteUids ||
+                        checkedDeleteUids.length === 0
+                    "
+                >
+                    刪除勾選
+                </button>
+
+                <span class="batch-delete-count">
+
+                    已勾選
+                    {{ checkedDeleteUids
+                        ? checkedDeleteUids.length
+                        : 0
+                    }}
+                    個
+
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 ZSC 分類樹
+                 ================================================= -->
+
+            <div class="tree">
+
+                <template
+                    v-for="type in types"
+                    :key="type"
+                >
+
+                    <div
+                        v-if="
+                            categories[type] !== false
+                        "
+                        class="tree-group"
+                    >
+
+                        <!-- 分類標題 -->
+
+                        <div class="tree-group-title">
+
+                            <div
+                                class="tree-group-main"
+                                @click="
+                                    toggleCategory(type)
+                                "
+                            >
+
+                                <span class="tree-arrow">
+
+                                    {{
+                                        isCategoryExpanded(type)
+                                            ? "▼"
+                                            : "▶"
+                                    }}
+
+                                </span>
+
+                                <span class="tree-group-name">
+                                    {{ type }}
+                                </span>
+
+                                <span class="tree-count">
+                                    {{ countType(type) }}
+                                </span>
+
+                            </div>
+
+
+                            <!-- 刪除全部 -->
+
+                            <button
+                                type="button"
+                                class="delete-all-button"
+                                @click.stop="
+                                    deleteAllItems(type)
+                                "
+                                :disabled="
+                                    countType(type) === 0
+                                "
+                                title="刪除這個分類的全部項目"
+                            >
+                                刪除全部
+                            </button>
+
+                        </div>
+
+
+                        <!-- 分類項目 -->
+
+                        <div
+                            v-if="
+                                isCategoryExpanded(type)
+                            "
+                            class="tree-group-items"
+                        >
+
+                            <div
+                                v-for="
+                                    item in itemsByType(type)
+                                "
+                                :key="item.uid"
+                                class="tree-item"
+                                :class="{
+                                    active:
+                                        selectedUid === item.uid
+                                }"
+                                @click="
+                                    selectItem(item.uid)
+                                "
+                            >
+
+                                <!-- 勾選刪除 -->
+
+                                <input
+                                    type="checkbox"
+                                    class="delete-checkbox"
+                                    v-model="
+                                        checkedDeleteUids
+                                    "
+                                    :value="item.uid"
+                                    @click.stop
+                                    title="選取此項目進行批量刪除"
+                                >
+
+
+                                <!-- 項目內容 -->
+
+                                <div class="tree-item-content">
+
+                                    <span class="tree-item-name">
+
+                                        {{ getItemName(item) }}
+
+                                    </span>
+
+
+                                    <!-- TRIGGER 顯示觸發文字 -->
+
+                                    <span
+                                        v-if="
+                                            item.type === 'TRIGGER' &&
+                                            item.triggerPattern
+                                        "
+                                        class="tree-item-trigger"
+                                    >
+                                        {{ item.triggerPattern }}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </template>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =================================================
+             右側編輯器
+             ================================================= -->
+
+        <main class="editor-panel">
+
+            <!-- 沒有選取項目 -->
+
+            <div
+                v-if="!selectedItem"
+                class="empty-editor"
+            >
+
+                <div class="empty-editor-title">
+                    尚未選取項目
+                </div>
+
+                <div class="empty-editor-text">
+
+                    請從左側選擇項目，
+                    或使用上方功能新增項目。
+
+                </div>
+
+            </div>
+
+
+            <!-- 有選取項目 -->
+
+            <template v-else>
+
+                <!-- =========================================
+                     編輯器標題
+                     ========================================= -->
+
+                <div class="editor-title-bar">
+
+                    <div class="editor-title">
+
+                        <span class="editor-item-type">
+                            {{ selectedItem.type }}
+                        </span>
+
+                        <span class="editor-item-name">
+                            {{ getItemName(selectedItem) }}
+                        </span>
+
+                        <span
+                            v-if="
+                                selectedItem.type === 'TRIGGER' &&
+                                selectedItem.triggerPattern
+                            "
+                            class="editor-item-trigger"
+                        >
+                            {{ selectedItem.triggerPattern }}
+                        </span>
+
+                        <span
+                            v-if="selectedItem.modified"
+                            class="modified-mark"
+                        >
+                            *
+                        </span>
+
+                    </div>
+
+
+                    <div class="editor-title-actions">
+
+                        <button
+                            type="button"
+                            @click="resetSelectedItem"
+                        >
+                            放棄修改
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="applyItem"
+                        >
+                            套用
+                        </button>
+
+                        <button
+                            type="button"
+                            class="danger-button"
+                            @click="deleteItem"
+                        >
+                            刪除
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================================
+                     特殊屬性
+                     ========================================= -->
+
+                <div
+                    v-if="selectedItem.type === 'TRIGGER'"
+                    class="special-properties"
+                >
+
+                    <label>
+                        觸發文字：
+
+                        <input
+                            v-model="
+                                selectedItem.triggerPattern
+                            "
+                            @input="
+                                markModified()
+                            "
+                        >
+
+                    </label>
+
+                    <label>
+                        ZMUD 值：
+
+                        <input
+                            v-model="
+                                selectedItem.zmudValue
+                            "
+                            @input="
+                                markModified()
+                            "
+                        >
+
+                    </label>
+
+                </div>
+
+
+                <div
+                    v-if="selectedItem.type === 'ALARM'"
+                    class="special-properties"
+                >
+
+                    <label>
+                        間隔：
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            v-model.number="
+                                selectedItem.interval
+                            "
+                            @input="
+                                selectedItem.intervalRaw =
+                                    '';
+                                markModified()
+                            "
+                        >
+
+                    </label>
+
+                    <label>
+                        ZMUD 值：
+
+                        <input
+                            v-model="
+                                selectedItem.zmudValue
+                            "
+                            @input="
+                                markModified()
+                            "
+                        >
+
+                    </label>
+
+                </div>
+
+
+                <!-- =========================================
+                     RAW 編輯器
+                     ========================================= -->
+
+                <div class="editor-section-title">
+                    RAW
+                </div>
+
+                <div class="raw-editor-wrapper">
+
+                    <textarea
+                        id="raw-editor"
+                        class="editor-textarea"
+                        :value="rawEditorValue"
+                        @input="onRawInput"
+                        @blur="finishTypingHistory"
+                        @scroll="syncLineNumbers"
+                        spellcheck="false"
+                    ></textarea>
+
+                </div>
+
+
+                <!-- =========================================
+                     FORMATTED
+                     ========================================= -->
+
+                <div class="editor-section-title">
+
+                    FORMATTED
+
+                    <span class="line-count">
+
+                        {{ lineCount }} 行
+
+                    </span>
+
+                </div>
+
+
+                <div class="highlight-editor">
+
+                    <!-- 語法高亮 -->
+
+                    <pre
+                        id="formatted-highlight"
+                        class="formatted-highlight"
+                        v-html="
+                            formattedHighlighted
+                        "
+                    ></pre>
+
+
+                    <!-- 真正可輸入的 textarea -->
+
+                    <textarea
+                        id="formatted-editor"
+                        class="
+                            editor-textarea
+                            formatted-input
+                        "
+                        :value="formattedEditorValue"
+                        @input="onFormattedInput"
+                        @blur="finishTypingHistory"
+                        @scroll="syncSyntaxScroll"
+                        spellcheck="false"
+                    ></textarea>
+
+                </div>
+
+            </template>
+
+        </main>
+
+    </div>
+
+
+    <!-- =====================================================
+         底部狀態列
+         ===================================================== -->
+
+    <div class="status-bar">
+
+        <span class="status-message">
+            {{ statusMessage }}
+        </span>
+
+        <span class="status-spacer"></span>
+
+        <span
+            v-if="canUndo"
+            class="history-status"
+        >
+            Undo {{ undoCount }}
+        </span>
+
+        <span
+            v-if="canRedo"
+            class="history-status"
+        >
+            Redo {{ redoCount }}
+        </span>
+
+        <span
+            v-if="fileName"
+            class="file-name"
+        >
+            {{ fileName }}
+        </span>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     Vue
+     ========================================================= -->
+
+<script src="https://unpkg.com/vue@3.5.43/dist/vue.global.prod.js"></script>
+
+
+<!-- =========================================================
+     ZSC 相關程式
+     ========================================================= -->
+
+<script src="big5.js"></script>
+<script src="parser.js"></script>
+<script src="content.js"></script>
+<script src="editor.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

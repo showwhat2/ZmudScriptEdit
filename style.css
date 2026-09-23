@@ -1,0 +1,1239 @@
+/* =========================================================
+   Base
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow: hidden;
+
+    background: #111;
+    color: #ddd;
+
+    font-family:
+        "Microsoft JhengHei",
+        "Noto Sans TC",
+        Arial,
+        sans-serif;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   App
+   ========================================================= */
+
+#app {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   Top Toolbar
+   ========================================================= */
+
+.toolbar {
+    height: 42px;
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 0 10px;
+
+    background: #202020;
+
+    border-bottom: 1px solid #3a3a3a;
+}
+
+
+.toolbar button {
+    height: 28px;
+
+    padding: 0 10px;
+
+    border: 1px solid #484848;
+    border-radius: 3px;
+
+    background: #292929;
+    color: #ccc;
+
+    cursor: pointer;
+
+    font-size: 12px;
+}
+
+
+.toolbar button:hover:not(:disabled) {
+    background: #363636;
+    color: #fff;
+}
+
+
+.toolbar button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+
+.toolbar-separator {
+    width: 1px;
+    height: 20px;
+
+    margin: 0 4px;
+
+    background: #444;
+}
+
+
+.toolbar-label {
+    display: flex;
+    align-items: center;
+
+    gap: 4px;
+
+    color: #888;
+
+    font-size: 11px;
+}
+
+
+.toolbar-label select {
+    height: 27px;
+
+    padding: 0 5px;
+
+    border: 1px solid #404040;
+    border-radius: 3px;
+
+    outline: none;
+
+    background: #181818;
+    color: #ccc;
+}
+
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+
+.encoding-info {
+    color: #777;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+}
+
+
+.dirty-indicator {
+    color: #c89a3c;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Drop Overlay
+   ========================================================= */
+
+.drop-overlay {
+    position: fixed;
+
+    z-index: 1000;
+
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.75);
+}
+
+
+.drop-message {
+    padding: 25px 40px;
+
+    border: 2px dashed #777;
+    border-radius: 6px;
+
+    background: #202020;
+
+    color: #ddd;
+
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   Main Layout
+   ========================================================= */
+
+.main-layout {
+    flex: 1;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   Sidebar
+   ========================================================= */
+
+.sidebar {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #181818;
+
+    border-right: 1px solid #3a3a3a;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   Sidebar Search
+   ========================================================= */
+
+.sidebar-search {
+    padding: 8px;
+
+    border-bottom: 1px solid #303030;
+}
+
+
+.sidebar-search input {
+    width: 100%;
+    height: 30px;
+
+    padding: 0 9px;
+
+    border: 1px solid #404040;
+    border-radius: 3px;
+
+    outline: none;
+
+    background: #101010;
+    color: #ddd;
+}
+
+
+.sidebar-search input:focus {
+    border-color: #666;
+}
+
+
+/* =========================================================
+   Category Toolbar
+   ========================================================= */
+
+.category-toolbar {
+    display: flex;
+
+    gap: 4px;
+
+    padding: 6px 8px;
+
+    border-bottom: 1px solid #303030;
+}
+
+
+.category-toolbar button {
+    flex: 1;
+
+    height: 26px;
+
+    padding: 0 5px;
+
+    border: 1px solid #3d3d3d;
+    border-radius: 3px;
+
+    background: #242424;
+    color: #999;
+
+    cursor: pointer;
+
+    font-size: 11px;
+}
+
+
+.category-toolbar button:hover {
+    background: #303030;
+    color: #ddd;
+}
+
+
+/* =========================================================
+   Batch Delete
+   ========================================================= */
+
+.batch-delete-bar {
+    min-height: 36px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 5px 8px;
+
+    border-bottom: 1px solid #303030;
+
+    background: #191919;
+}
+
+
+.batch-delete-button {
+    height: 26px;
+
+    padding: 0 10px;
+
+    border: 1px solid #4a3333;
+    border-radius: 3px;
+
+    background: #281b1b;
+
+    color: #b77;
+
+    cursor: pointer;
+
+    font-size: 11px;
+}
+
+
+.batch-delete-button:hover:not(:disabled) {
+    background: #4a2525;
+    color: #eee;
+}
+
+
+.batch-delete-button:disabled {
+    opacity: 0.35;
+
+    cursor: default;
+}
+
+
+.batch-delete-count {
+    color: #666;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   Tree
+   ========================================================= */
+
+.tree {
+    flex: 1;
+
+    min-height: 0;
+
+    overflow: auto;
+
+    padding: 4px 0;
+}
+
+
+.tree-group {
+    width: 100%;
+}
+
+
+/* =========================================================
+   Category Title
+   ========================================================= */
+
+.tree-group-title {
+    min-height: 30px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 6px 0 9px;
+
+    color: #bbb;
+
+    user-select: none;
+}
+
+
+.tree-group-main {
+    min-width: 0;
+
+    flex: 1;
+
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+
+    cursor: pointer;
+}
+
+
+.tree-group-title:hover {
+    background: #252525;
+}
+
+
+.tree-arrow {
+    width: 18px;
+
+    color: #888;
+
+    font-size: 10px;
+}
+
+
+.tree-group-name {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+.tree-count {
+    margin-left: 8px;
+
+    color: #666;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   Delete All
+   ========================================================= */
+
+.delete-all-button {
+    flex: 0 0 auto;
+
+    height: 20px;
+
+    padding: 0 5px;
+
+    border: 1px solid #493030;
+    border-radius: 3px;
+
+    background: #241919;
+
+    color: #9b6b6b;
+
+    cursor: pointer;
+
+    font-size: 9px;
+
+    line-height: 18px;
+
+    opacity: 0.8;
+}
+
+
+.delete-all-button:hover:not(:disabled) {
+    background: #3a2020;
+
+    border-color: #684040;
+
+    color: #d8aaaa;
+
+    opacity: 1;
+}
+
+
+.delete-all-button:disabled {
+    opacity: 0.25;
+
+    cursor: default;
+}
+
+
+/* =========================================================
+   Tree Group Items
+   ========================================================= */
+
+.tree-group-items {
+    padding-bottom: 3px;
+}
+
+
+/* =========================================================
+   Tree Item
+   ========================================================= */
+
+.tree-item {
+    min-height: 28px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 4px 8px 4px 12px;
+
+    color: #aaa;
+
+    cursor: pointer;
+
+    user-select: none;
+}
+
+
+.tree-item:hover {
+    background: #252525;
+
+    color: #ddd;
+}
+
+
+.tree-item.active {
+    background: #333;
+
+    color: #fff;
+
+    box-shadow:
+        inset 2px 0 0 #888;
+}
+
+
+/* =========================================================
+   Delete Checkbox
+   ========================================================= */
+
+.delete-checkbox {
+    flex: 0 0 auto;
+
+    width: 14px;
+    height: 14px;
+
+    margin: 0 7px 0 0;
+
+    accent-color: #777;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   Tree Item Content
+   ========================================================= */
+
+.tree-item-content {
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+
+    overflow: hidden;
+}
+
+
+.tree-item-name {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 12px;
+
+    line-height: 1.35;
+}
+
+
+.tree-item-trigger {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: #999;
+
+    font-size: 12px;
+
+    line-height: 1.35;
+}
+
+
+.tree-item.active .tree-item-trigger {
+    color: #c0c0c0;
+}
+
+
+/* =========================================================
+   Right Editor Panel
+   ========================================================= */
+
+.editor-panel {
+    flex: 1;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #141414;
+}
+
+
+/* =========================================================
+   Editor Title Bar
+   ========================================================= */
+
+.editor-title-bar {
+    min-height: 40px;
+
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding: 0 10px;
+
+    background: #1d1d1d;
+
+    border-bottom: 1px solid #363636;
+}
+
+
+.editor-title {
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    overflow: hidden;
+}
+
+
+.editor-item-type {
+    flex: 0 0 auto;
+
+    color: #888;
+
+    font-size: 11px;
+}
+
+
+.editor-item-name {
+    min-width: 0;
+
+    color: #eee;
+
+    font-weight: bold;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+.editor-item-trigger {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: #888;
+
+    font-size: 11px;
+}
+
+
+.modified-mark {
+    flex: 0 0 auto;
+
+    color: #d6a64b;
+
+    font-weight: bold;
+}
+
+
+.editor-title-actions {
+    flex: 0 0 auto;
+
+    display: flex;
+
+    gap: 5px;
+}
+
+
+.editor-title-actions button {
+    height: 27px;
+
+    padding: 0 9px;
+
+    border: 1px solid #454545;
+    border-radius: 3px;
+
+    background: #282828;
+
+    color: #bbb;
+
+    cursor: pointer;
+
+    font-size: 11px;
+}
+
+
+.editor-title-actions button:hover {
+    background: #363636;
+
+    color: #fff;
+}
+
+
+.editor-title-actions .danger-button {
+    border-color: #553333;
+
+    background: #291b1b;
+
+    color: #b77;
+}
+
+
+.editor-title-actions .danger-button:hover {
+    background: #492525;
+
+    color: #eee;
+}
+
+
+/* =========================================================
+   Empty Editor
+   ========================================================= */
+
+.empty-editor {
+    flex: 1;
+
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    color: #666;
+}
+
+
+.empty-editor-title {
+    color: #888;
+
+    font-size: 15px;
+}
+
+
+.empty-editor-text {
+    color: #555;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   Special Properties
+   ========================================================= */
+
+.special-properties {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 8px 10px;
+
+    background: #191919;
+
+    border-bottom: 1px solid #333;
+}
+
+
+.special-properties label {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    color: #888;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+}
+
+
+.special-properties input {
+    width: 220px;
+
+    height: 27px;
+
+    min-width: 80px;
+
+    padding: 0 7px;
+
+    border: 1px solid #404040;
+    border-radius: 3px;
+
+    outline: none;
+
+    background: #101010;
+
+    color: #ddd;
+
+    font-family: inherit;
+}
+
+
+.special-properties input:focus {
+    border-color: #666;
+}
+
+
+/* =========================================================
+   Editor Section Title
+   ========================================================= */
+
+.editor-section-title {
+    flex: 0 0 auto;
+
+    height: 28px;
+
+    min-height: 28px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 10px;
+
+    background: #1c1c1c;
+
+    border-bottom: 1px solid #333;
+
+    color: #bbb;
+
+    font-size: 11px;
+
+    font-weight: bold;
+
+    letter-spacing: 0.5px;
+}
+
+
+.line-count {
+    margin-left: 8px;
+
+    color: #666;
+
+    font-weight: normal;
+
+    letter-spacing: 0;
+}
+
+
+/* =========================================================
+   RAW Editor
+   ========================================================= */
+
+.raw-editor-wrapper {
+    flex: 0 0 170px;
+
+    min-height: 80px;
+
+    overflow: hidden;
+
+    background: #0e0e0e;
+}
+
+
+.raw-editor-wrapper .editor-textarea {
+    width: 100%;
+    height: 100%;
+}
+
+
+/* =========================================================
+   FORMATTED / Highlight Editor
+   ========================================================= */
+
+.highlight-editor {
+    position: relative;
+
+    flex: 1;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+
+    background: #0e0e0e;
+}
+
+
+/* =========================================================
+   真正的 textarea
+   ========================================================= */
+
+.formatted-input {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    margin: 0;
+    padding: 12px;
+
+    resize: none;
+
+    border: 0;
+    outline: none;
+
+    background: #0e0e0e;
+
+    color: transparent;
+
+    caret-color: #ffffff;
+
+    -webkit-text-fill-color: transparent;
+
+    font-family:
+        Consolas,
+        "Cascadia Mono",
+        "Microsoft JhengHei",
+        monospace;
+
+    font-size: 13px;
+
+    font-weight: normal;
+
+    line-height: 1.5;
+
+    letter-spacing: normal;
+
+    white-space: pre;
+
+    word-wrap: normal;
+
+    tab-size: 4;
+
+    overflow: auto;
+
+    z-index: 1;
+}
+
+
+/* =========================================================
+   上色層
+   ========================================================= */
+
+.formatted-highlight {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    margin: 0;
+    padding: 12px;
+
+    overflow: hidden;
+
+    background: transparent;
+
+    color: #d0d0d0;
+
+    font-family:
+        Consolas,
+        "Cascadia Mono",
+        "Microsoft JhengHei",
+        monospace;
+
+    font-size: 13px;
+
+    font-weight: normal;
+
+    line-height: 1.5;
+
+    letter-spacing: normal;
+
+    white-space: pre;
+
+    word-wrap: normal;
+
+    tab-size: 4;
+
+    z-index: 2;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   編輯時選取範圍
+   ========================================================= */
+
+.formatted-input::selection {
+    background: rgba(100, 140, 200, 0.35);
+
+    color: transparent;
+}
+
+
+/* =========================================================
+   ZSC 語法顏色
+   ========================================================= */
+
+.zsc-command {
+    color: #ffcc66;
+
+    font-weight: bold;
+}
+
+
+.zsc-zmud-command {
+    color: #66b3ff;
+}
+
+
+.zsc-variable {
+    color: #d98cff;
+}
+
+
+.zsc-alarm-time {
+    color: #ff8c8c;
+
+    font-weight: bold;
+}
+
+
+.zsc-number {
+    color: #8fd694;
+}
+
+
+.zsc-semicolon {
+    color: #777;
+}
+
+
+.zsc-brace {
+    color: #aaa;
+}
+
+
+/* =========================================================
+   Textarea Scrollbar
+   ========================================================= */
+
+.tree::-webkit-scrollbar,
+.editor-textarea::-webkit-scrollbar,
+.formatted-input::-webkit-scrollbar {
+    width: 10px;
+
+    height: 10px;
+}
+
+
+.tree::-webkit-scrollbar-track,
+.editor-textarea::-webkit-scrollbar-track,
+.formatted-input::-webkit-scrollbar-track {
+    background: #111;
+}
+
+
+.tree::-webkit-scrollbar-thumb,
+.editor-textarea::-webkit-scrollbar-thumb,
+.formatted-input::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+
+    border-radius: 5px;
+}
+
+
+.tree::-webkit-scrollbar-thumb:hover,
+.editor-textarea::-webkit-scrollbar-thumb:hover,
+.formatted-input::-webkit-scrollbar-thumb:hover {
+    background: #505050;
+}
+
+
+/* =========================================================
+   Status Bar
+   ========================================================= */
+
+.status-bar {
+    height: 25px;
+
+    min-height: 25px;
+
+    flex: 0 0 25px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 0 9px;
+
+    background: #202020;
+
+    border-top: 1px solid #3a3a3a;
+
+    color: #777;
+
+    font-size: 11px;
+}
+
+
+.status-message {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+.status-spacer {
+    flex: 1;
+}
+
+
+.history-status {
+    color: #666;
+
+    white-space: nowrap;
+}
+
+
+.file-name {
+    max-width: 300px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: #777;
+}
+
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .sidebar {
+        width: 240px;
+        min-width: 240px;
+        max-width: 240px;
+    }
+
+    .special-properties {
+        flex-wrap: wrap;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .sidebar {
+        width: 210px;
+        min-width: 210px;
+        max-width: 210px;
+    }
+
+    .toolbar-label {
+        display: none;
+    }
+
+    .special-properties {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .special-properties input {
+        width: 180px;
+    }
+
+}
