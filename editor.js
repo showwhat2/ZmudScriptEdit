@@ -1,281 +1,132 @@
+/* =========================================================
+   ZSC Editor Methods
+   ========================================================= */
+
 const editorMethods = {
 
-    // =====================================================
-    // Undo / Redo：歷史紀錄工具
-    // =====================================================
+    /* =========================================================
+       History
+       ========================================================= */
 
     cloneHistoryState() {
 
         return {
+            items: JSON.parse(
+                JSON.stringify(this.items)
+            ),
 
-            items:
-                JSON.parse(
-                    JSON.stringify(
-                        this.items
-                    )
-                ),
+            selectedUid: this.selectedUid,
 
-            selectedUid:
-                this.selectedUid,
+            checkedDeleteUids: [
+                ...(this.checkedDeleteUids || [])
+            ],
 
-            checkedDeleteUids:
-                [
-                    ...(this.checkedDeleteUids || [])
-                ],
-
-            dirty:
-                this.dirty
-
+            dirty: this.dirty
         };
-
     },
 
 
     updateHistorySnapshot() {
 
         if (this.historyRestoring) {
-
             return;
-
         }
-
 
         this.historySnapshot =
             this.cloneHistoryState();
-
     },
 
 
     historyStatesEqual(a, b) {
 
         if (!a || !b) {
-
             return false;
-
         }
 
-
-        return (
-            JSON.stringify(a) ===
-            JSON.stringify(b)
-        );
-
+        return JSON.stringify(a) ===
+            JSON.stringify(b);
     },
 
 
     saveHistory() {
 
         if (this.historyRestoring) {
-
             return;
-
         }
-
 
         const state =
             this.cloneHistoryState();
 
-
-        this.undoStack.push(
-            state
-        );
-
+        this.undoStack.push(state);
 
         this.redoStack = [];
 
-
         const MAX_HISTORY = 100;
-
 
         if (
             this.undoStack.length >
             MAX_HISTORY
         ) {
-
             this.undoStack.shift();
-
         }
-
     },
 
-
-    // =====================================================
-    // 一般欄位修改的歷史紀錄
-    // =====================================================
 
     recordModifiedHistory() {
 
         if (this.historyRestoring) {
-
             return;
-
         }
 
-
-        /*
-         * 正常情況下 historySnapshot
-         * 在開檔、選取項目、新增項目後
-         * 都已經存在。
-         */
         if (!this.historySnapshot) {
 
             this.historySnapshot =
                 this.cloneHistoryState();
 
             return;
-
         }
 
+        if (this.typingHistoryStarted) {
+            return;
+        }
 
-        /*
-         * 只有非文字輸入才會使用這個方法。
-         *
-         * 文字編輯器會使用
-         * recordTypingHistory()。
-         */
         const current =
             this.cloneHistoryState();
 
-
         if (
-            this.historyStatesEqual(
+            !this.historyStatesEqual(
                 current,
                 this.historySnapshot
             )
         ) {
 
-            return;
+            this.undoStack.push(
+                this.historySnapshot
+            );
 
+            this.redoStack = [];
+
+            const MAX_HISTORY = 100;
+
+            if (
+                this.undoStack.length >
+                MAX_HISTORY
+            ) {
+                this.undoStack.shift();
+            }
+
+            this.typingHistoryStarted = true;
         }
-
-
-        this.undoStack.push(
-            this.historySnapshot
-        );
-
-
-        this.redoStack = [];
-
-
-        const MAX_HISTORY = 100;
-
-
-        if (
-            this.undoStack.length >
-            MAX_HISTORY
-        ) {
-
-            this.undoStack.shift();
-
-        }
-
-
-        /*
-         * 修改完成後立即建立新的基準。
-         */
-        this.historySnapshot =
-            current;
-
-
-        this.typingHistoryStarted =
-            false;
-
     },
 
-
-    // =====================================================
-    // 文字輸入歷史紀錄
-    // =====================================================
-
-    recordTypingHistory() {
-
-        if (this.historyRestoring) {
-
-            return;
-
-        }
-
-
-        /*
-         * 已經在這一段文字輸入中：
-         *
-         * 不再 clone 整個 items。
-         */
-        if (
-            this.typingHistoryStarted
-        ) {
-
-            return;
-
-        }
-
-
-        /*
-         * 正常情況下這裡一定有 snapshot。
-         */
-        if (!this.historySnapshot) {
-
-            this.historySnapshot =
-                this.cloneHistoryState();
-
-        }
-
-
-        /*
-         * 注意：
-         *
-         * historySnapshot 是輸入前狀態。
-         *
-         * 所以這裡只需要把它放入 Undo。
-         *
-         * 不需要把「目前狀態」再 deep clone 一次。
-         */
-        this.undoStack.push(
-            this.historySnapshot
-        );
-
-
-        this.redoStack = [];
-
-
-        const MAX_HISTORY = 100;
-
-
-        if (
-            this.undoStack.length >
-            MAX_HISTORY
-        ) {
-
-            this.undoStack.shift();
-
-        }
-
-
-        this.typingHistoryStarted =
-            true;
-
-    },
-
-
-    // =====================================================
-    // 還原歷史狀態
-    // =====================================================
 
     restoreHistoryState(state) {
 
         if (!state) {
-
             return;
-
         }
 
-
-        this.cancelEditorTimers();
-
-
-        this.historyRestoring =
-            true;
-
+        this.historyRestoring = true;
 
         this.items =
             JSON.parse(
@@ -284,21 +135,15 @@ const editorMethods = {
                 )
             );
 
-
         this.selectedUid =
-            state.selectedUid ||
-            null;
+            state.selectedUid || null;
 
-
-        this.checkedDeleteUids =
-            [
-                ...(state.checkedDeleteUids || [])
-            ];
-
+        this.checkedDeleteUids = [
+            ...(state.checkedDeleteUids || [])
+        ];
 
         this.dirty =
             state.dirty !== false;
-
 
         const item =
             this.items.find(
@@ -307,35 +152,19 @@ const editorMethods = {
                     this.selectedUid
             );
 
-
         if (item) {
-
-            this.prepareSpecialProperties(
-                item
-            );
-
+            this.prepareSpecialProperties(item);
         }
-
 
         this.refreshEditors();
 
-
-        this.historyRestoring =
-            false;
-
+        this.historyRestoring = false;
 
         this.updateHistorySnapshot();
 
-
-        this.typingHistoryStarted =
-            false;
-
+        this.typingHistoryStarted = false;
     },
 
-
-    // =====================================================
-    // Undo
-    // =====================================================
 
     undo() {
 
@@ -348,40 +177,28 @@ const editorMethods = {
                 "沒有可以復原的操作";
 
             return;
-
         }
-
 
         this.finishTypingHistory();
 
-
         const currentState =
             this.cloneHistoryState();
-
 
         this.redoStack.push(
             currentState
         );
 
-
         const previousState =
             this.undoStack.pop();
-
 
         this.restoreHistoryState(
             previousState
         );
 
-
         this.statusMessage =
             "已復原上一步";
-
     },
 
-
-    // =====================================================
-    // Redo
-    // =====================================================
 
     redo() {
 
@@ -394,40 +211,28 @@ const editorMethods = {
                 "沒有可以重做的操作";
 
             return;
-
         }
-
 
         this.finishTypingHistory();
 
-
         const currentState =
             this.cloneHistoryState();
-
 
         this.undoStack.push(
             currentState
         );
 
-
         const nextState =
             this.redoStack.pop();
-
 
         this.restoreHistoryState(
             nextState
         );
 
-
         this.statusMessage =
             "已重做下一步";
-
     },
 
-
-    // =====================================================
-    // 清除歷史
-    // =====================================================
 
     clearHistory() {
 
@@ -435,236 +240,369 @@ const editorMethods = {
 
         this.redoStack = [];
 
+        this.typingHistoryStarted = false;
+
+        this.historySnapshot = null;
+    },
+
+
+    /* =========================================================
+       Editor Commit
+       ========================================================= */
+
+    /*
+     * FORMATTED → RAW
+     *
+     * CodeMirror 是 FORMATTED 的真正資料來源。
+     *
+     * 特殊處理：
+     *
+     * FUNC 是純文字／數值內容，
+     * 不使用 ZSCContent.unformat()，
+     * 因為 unformat() 會自動補上分號。
+     */
+
+    commitFormattedEditor() {
+
+        if (!this.selectedItem) {
+            return;
+        }
+
+
+        let value = "";
+
+
+        /*
+         * 優先從 CodeMirror 取得內容。
+         */
+
+        if (
+            window.ZSCCodemirror &&
+            typeof
+                window.ZSCCodemirror.getValue ===
+                "function"
+        ) {
+
+            const cm =
+                window.ZSCCodemirror.getInstance();
+
+            if (cm) {
+
+                value =
+                    window.ZSCCodemirror.getValue();
+
+            }
+            else {
+
+                value =
+                    this.formattedEditorValue ||
+                    "";
+            }
+
+        }
+        else {
+
+            value =
+                this.formattedEditorValue ||
+                "";
+        }
+
+
+        this.formattedEditorValue =
+            value;
+
+        this.formattedHighlightValue =
+            value;
+
+
+        /*
+         * -----------------------------------------------------
+         * FUNC 特殊處理
+         * -----------------------------------------------------
+         *
+         * FUNC 內容是純文字／數值。
+         *
+         * 不經過 unformat()，
+         * 避免：
+         *
+         *     12345
+         *
+         * 被轉成：
+         *
+         *     12345;
+         */
+
+        let raw;
+
+
+        if (
+            this.selectedItem.type ===
+            "FUNC"
+        ) {
+
+            raw =
+                value;
+
+        }
+        else {
+
+            raw =
+                ZSCContent.unformat(
+                    value
+                );
+        }
+
+
+        this.selectedItem.content =
+            raw;
+
+        this.rawEditorValue =
+            raw;
+    },
+
+
+    /*
+     * RAW → item
+     */
+
+    commitRawEditor() {
+
+        if (!this.selectedItem) {
+            return;
+        }
+
+
+        const input =
+            document.getElementById(
+                "raw-editor"
+            );
+
+
+        if (!input) {
+            return;
+        }
+
+
+        const value =
+            input.value;
+
+
+        this.rawEditorValue =
+            value;
+
+        this.selectedItem.content =
+            value;
+
+
+        /*
+         * RAW → FORMATTED
+         */
+
+        const formatted =
+            ZSCContent.format(
+                value
+            );
+
+
+        this.formattedEditorValue =
+            formatted;
+
+        this.formattedHighlightValue =
+            formatted;
+
+
+        /*
+         * CodeMirror 更新。
+         */
+
+        this.$nextTick(() => {
+
+            if (
+                window.ZSCCodemirror
+            ) {
+
+                const cm =
+                    window.ZSCCodemirror
+                        .getInstance();
+
+                if (cm) {
+
+                    window.ZSCCodemirror
+                        .setValue(
+                            formatted
+                        );
+                }
+            }
+
+        });
+    },
+
+
+    /*
+     * 提交目前正在使用的編輯器。
+     */
+
+    commitActiveEditor() {
+
+        if (!this.selectedItem) {
+            return;
+        }
+
+
+        /*
+         * 如果 CodeMirror 已經初始化，
+         * 它就是 FORMATTED 的真正資料來源。
+         */
+
+        if (
+            window.ZSCCodemirror &&
+            window.ZSCCodemirror.getInstance()
+        ) {
+
+            this.commitFormattedEditor();
+
+            return;
+        }
+
+
+        /*
+         * 否則檢查 RAW。
+         */
+
+        const active =
+            document.activeElement;
+
+
+        if (
+            active &&
+            active.id ===
+                "raw-editor"
+        ) {
+
+            this.commitRawEditor();
+
+            return;
+        }
+
+
+        /*
+         * 沒有 focus 時，
+         * 使用目前 FORMATTED 值。
+         */
+
+        if (
+            this.formattedEditorValue !==
+            ZSCContent.format(
+                this.rawEditorValue || ""
+            )
+        ) {
+
+            this.commitFormattedEditor();
+        }
+    },
+
+
+    /* =========================================================
+       Finish Typing
+       ========================================================= */
+
+    finishTypingHistory() {
+
+        if (!this.selectedItem) {
+            return;
+        }
+
+
+        /*
+         * -----------------------------------------------------
+         * CodeMirror
+         * -----------------------------------------------------
+         */
+
+        if (
+            window.ZSCCodemirror &&
+            typeof
+                window.ZSCCodemirror.getValue ===
+                "function"
+        ) {
+
+            const cm =
+                window.ZSCCodemirror.getInstance();
+
+            if (cm) {
+
+                const value =
+                    window.ZSCCodemirror.getValue();
+
+
+                this.formattedEditorValue =
+                    value;
+
+                this.formattedHighlightValue =
+                    value;
+
+
+                /*
+                 * -------------------------------------------------
+                 * FUNC 特殊處理
+                 * -------------------------------------------------
+                 *
+                 * FUNC 不使用 unformat()，
+                 * 避免自動加入分號。
+                 */
+
+                if (
+                    this.selectedItem.type ===
+                    "FUNC"
+                ) {
+
+                    this.selectedItem.content =
+                        value;
+
+                }
+                else {
+
+                    this.selectedItem.content =
+                        ZSCContent.unformat(
+                            value
+                        );
+                }
+
+
+                this.rawEditorValue =
+                    this.selectedItem.content;
+            }
+        }
+
+
+        /*
+         * -----------------------------------------------------
+         * History
+         * -----------------------------------------------------
+         */
+
         this.typingHistoryStarted =
             false;
 
         this.historySnapshot =
-            null;
-
+            this.cloneHistoryState();
     },
 
 
-    // =====================================================
-    // 取消編輯器延遲工作
-    // =====================================================
-
-    cancelEditorTimers() {
-
-        if (
-            this.highlightFrameId
-        ) {
-
-            cancelAnimationFrame(
-                this.highlightFrameId
-            );
-
-            this.highlightFrameId =
-                null;
-
-        }
-
-
-        if (
-            this.rawFormatTimer
-        ) {
-
-            clearTimeout(
-                this.rawFormatTimer
-            );
-
-            this.rawFormatTimer =
-                null;
-
-        }
-
-    },
-
-
-    // =====================================================
-    // 延遲更新 Syntax Highlight
-    // =====================================================
-
-    scheduleSyntaxHighlight(value) {
-
-        /*
-         * 先記住最新文字。
-         *
-         * 這裡不直接觸發 highlight，
-         * 避免每一個 keydown 都重跑。
-         */
-        this.pendingHighlightValue =
-            value;
-
-
-        if (
-            this.highlightFrameId
-        ) {
-
-            return;
-
-        }
-
-
-        this.highlightFrameId =
-            requestAnimationFrame(
-                () => {
-
-                    this.highlightFrameId =
-                        null;
-
-
-                    this.formattedHighlightValue =
-                        this.pendingHighlightValue;
-
-                }
-            );
-
-    },
-
-
-    // =====================================================
-    // 延遲 Raw → Formatted
-    // =====================================================
-
-    scheduleRawFormattedRefresh() {
-
-        if (
-            this.rawFormatTimer
-        ) {
-
-            clearTimeout(
-                this.rawFormatTimer
-            );
-
-        }
-
-
-        this.rawFormatTimer =
-            setTimeout(
-                () => {
-
-                    this.rawFormatTimer =
-                        null;
-
-
-                    /*
-                     * Raw 編輯器正在輸入時，
-                     * 只更新另一邊的 Formatted。
-                     */
-                    if (
-                        !this.selectedItem
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const input =
-                        document.activeElement;
-
-
-                    /*
-                     * 如果使用者此刻已經切換到
-                     * Formatted，就不要覆蓋它。
-                     */
-                    if (
-                        input &&
-                        input.id ===
-                        "formatted-editor"
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    this.formattedEditorValue =
-                        ZSCContent.format(
-                            this.selectedItem.content ||
-                            ""
-                        );
-
-
-                    this.scheduleSyntaxHighlight(
-                        this.formattedEditorValue
-                    );
-
-                },
-                180
-            );
-
-    },
-
-
-    // =====================================================
-    // 結束目前連續文字輸入
-    // =====================================================
-
-    finishTypingHistory(event) {
-
-        /*
-         * 如果是 textarea 失去焦點，
-         * 離開時把格式整理一次。
-         */
-        const target =
-            event &&
-            event.target;
-
-
-        const targetId =
-            target &&
-            target.id;
-
-
-        this.typingHistoryStarted =
-            false;
-
-
-        if (
-            !this.historyRestoring
-        ) {
-
-            this.updateHistorySnapshot();
-
-        }
-
-
-        /*
-         * 如果是 Raw / Formatted 編輯器，
-         * 離開編輯器後再重新整理。
-         */
-        if (
-            targetId === "raw-editor" ||
-            targetId === "formatted-editor"
-        ) {
-
-            this.cancelEditorTimers();
-
-
-            this.refreshEditors();
-
-        }
-
-    },
-
-
-    // =====================================================
-    // 開啟檔案
-    // =====================================================
+    /* =========================================================
+       File
+       ========================================================= */
 
     openFile() {
 
         const input =
-            document.createElement("input");
+            document.createElement(
+                "input"
+            );
 
+        input.type = "file";
 
-        input.type =
-            "file";
-
-
-        input.accept =
-            ".zsc";
+        input.accept = ".zsc";
 
 
         input.addEventListener(
@@ -674,28 +612,18 @@ const editorMethods = {
                 const file =
                     event.target.files[0];
 
-
                 if (!file) {
-
                     return;
-
                 }
 
-
                 this.loadFile(file);
-
             }
         );
 
 
         input.click();
-
     },
 
-
-    // =====================================================
-    // ALARM
-    // =====================================================
 
     parseAlarmProperties(item) {
 
@@ -703,9 +631,7 @@ const editorMethods = {
             !item ||
             item.type !== "ALARM"
         ) {
-
             return;
-
         }
 
 
@@ -723,18 +649,14 @@ const editorMethods = {
 
             item.interval =
                 Number(match[1]);
-
         }
-
     },
 
 
     buildAlarmInterval(item) {
 
         if (item.intervalRaw) {
-
             return item.intervalRaw;
-
         }
 
 
@@ -744,30 +666,20 @@ const editorMethods = {
             item.interval !== ""
         ) {
 
-            return (
-                "{*" +
+            return "{*" +
                 item.interval +
-                "}"
-            );
-
+                "}";
         }
 
 
         return "{*0}";
-
     },
 
-
-    // =====================================================
-    // 特殊屬性
-    // =====================================================
 
     prepareSpecialProperties(item) {
 
         if (!item) {
-
             return;
-
         }
 
 
@@ -780,8 +692,8 @@ const editorMethods = {
                 undefined
             ) {
 
-                item.triggerPattern = "";
-
+                item.triggerPattern =
+                    "";
             }
 
 
@@ -790,10 +702,9 @@ const editorMethods = {
                 undefined
             ) {
 
-                item.zmudValue = "";
-
+                item.zmudValue =
+                    "";
             }
-
         }
 
 
@@ -806,8 +717,8 @@ const editorMethods = {
                 undefined
             ) {
 
-                item.intervalRaw = "";
-
+                item.intervalRaw =
+                    "";
             }
 
 
@@ -816,8 +727,8 @@ const editorMethods = {
                 undefined
             ) {
 
-                item.interval = 0;
-
+                item.interval =
+                    0;
             }
 
 
@@ -826,49 +737,32 @@ const editorMethods = {
                 undefined
             ) {
 
-                item.zmudValue = "";
-
+                item.zmudValue =
+                    "";
             }
 
 
             this.parseAlarmProperties(
                 item
             );
-
         }
-
     },
 
-
-    // =====================================================
-    // File Input
-    // =====================================================
 
     handleFileInput(event) {
 
         const file =
             event.target.files[0];
 
-
         if (!file) {
-
             return;
-
         }
-
 
         this.loadFile(file);
 
-
-        event.target.value =
-            "";
-
+        event.target.value = "";
     },
 
-
-    // =====================================================
-    // Drag & Drop
-    // =====================================================
 
     handleDrop(event) {
 
@@ -881,9 +775,7 @@ const editorMethods = {
             !files ||
             files.length === 0
         ) {
-
             return;
-
         }
 
 
@@ -901,18 +793,12 @@ const editorMethods = {
                 "請放入 .zsc 檔案";
 
             return;
-
         }
 
 
         this.loadFile(file);
-
     },
 
-
-    // =====================================================
-    // 讀取檔案
-    // =====================================================
 
     async loadFile(file) {
 
@@ -935,7 +821,6 @@ const editorMethods = {
                     Big5Util.detectEncoding(
                         buffer
                     );
-
             }
 
 
@@ -953,10 +838,8 @@ const editorMethods = {
             this.sourceText =
                 text;
 
-
             this.fileName =
                 file.name;
-
 
             this.detectedEncoding =
                 encoding;
@@ -971,10 +854,8 @@ const editorMethods = {
             this.selectedUid =
                 null;
 
-
             this.checkedDeleteUids =
                 [];
-
 
             this.dirty =
                 false;
@@ -999,9 +880,7 @@ const editorMethods = {
 
                         this.expandedCategories[type] =
                             true;
-
                     }
-
                 }
             );
 
@@ -1010,8 +889,9 @@ const editorMethods = {
                 this.items.find(
                     item =>
                         !item.deleted &&
-                        this.categories[item.type]
-                        !== false
+                        this.categories[
+                            item.type
+                        ] !== false
                 );
 
 
@@ -1020,16 +900,13 @@ const editorMethods = {
                 this.selectedUid =
                     firstItem.uid;
 
-
                 this.prepareSpecialProperties(
                     firstItem
                 );
-
             }
 
 
             this.refreshEditors();
-
 
             this.updateHistorySnapshot();
 
@@ -1048,15 +925,9 @@ const editorMethods = {
                     error.message ||
                     error
                 );
-
         }
-
     },
 
-
-    // =====================================================
-    // 新增檔案
-    // =====================================================
 
     newFile() {
 
@@ -1066,46 +937,29 @@ const editorMethods = {
                 "目前檔案尚未儲存，確定要建立新檔案嗎？"
             )
         ) {
-
             return;
-
         }
 
 
-        this.cancelEditorTimers();
+        this.finishTypingHistory();
 
 
-        this.sourceText =
-            "";
+        this.sourceText = "";
 
+        this.fileName = "";
 
-        this.fileName =
-            "";
+        this.items = [];
 
+        this.selectedUid = null;
 
-        this.items =
-            [];
+        this.checkedDeleteUids = [];
 
-
-        this.selectedUid =
-            null;
-
-
-        this.checkedDeleteUids =
-            [];
-
-
-        this.searchText =
-            "";
-
+        this.searchText = "";
 
         this.detectedEncoding =
             "utf-8";
 
-
-        this.dirty =
-            false;
-
+        this.dirty = false;
 
         this.statusMessage =
             "已建立新檔案";
@@ -1119,32 +973,26 @@ const editorMethods = {
 
                 this.expandedCategories[type] =
                     true;
-
             }
         );
 
 
         this.refreshEditors();
 
-
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // 分類
-    // =====================================================
+    /* =========================================================
+       List
+       ========================================================= */
 
     itemsByType(type) {
 
         const keyword =
-            (
-                this.searchText ||
-                ""
-            )
-            .trim()
-            .toLowerCase();
+            (this.searchText || "")
+                .trim()
+                .toLowerCase();
 
 
         return this.items.filter(
@@ -1153,129 +1001,97 @@ const editorMethods = {
                 if (
                     item.type !== type
                 ) {
-
                     return false;
-
                 }
 
 
-                if (
-                    item.deleted
-                ) {
-
+                if (item.deleted) {
                     return false;
-
                 }
 
 
                 if (!keyword) {
-
                     return true;
-
                 }
 
 
                 const name =
                     String(
-                        item.name ||
-                        ""
-                    )
-                    .toLowerCase();
+                        item.name || ""
+                    ).toLowerCase();
 
 
                 const content =
                     String(
-                        item.content ||
-                        ""
-                    )
-                    .toLowerCase();
+                        item.content || ""
+                    ).toLowerCase();
 
 
                 return (
                     name.includes(keyword) ||
                     content.includes(keyword)
                 );
-
             }
         );
-
     },
 
 
     filteredItems() {
 
         const keyword =
-            (
-                this.searchText ||
-                ""
-            )
-            .trim()
-            .toLowerCase();
+            (this.searchText || "")
+                .trim()
+                .toLowerCase();
 
 
         return this.items.filter(
             item => {
 
-                if (
-                    item.deleted
-                ) {
-
+                if (item.deleted) {
                     return false;
-
                 }
 
 
                 if (
-                    this.categories[item.type]
-                    === false
+                    this.categories[
+                        item.type
+                    ] === false
                 ) {
-
                     return false;
-
                 }
 
 
                 if (!keyword) {
-
                     return true;
-
                 }
 
 
                 const name =
                     String(
-                        item.name ||
-                        ""
-                    )
-                    .toLowerCase();
+                        item.name || ""
+                    ).toLowerCase();
 
 
                 const content =
                     String(
-                        item.content ||
-                        ""
-                    )
-                    .toLowerCase();
+                        item.content || ""
+                    ).toLowerCase();
 
 
                 return (
                     name.includes(keyword) ||
                     content.includes(keyword)
                 );
-
             }
         );
-
     },
 
 
     isCategoryExpanded(type) {
 
         return (
-            this.expandedCategories[type]
-            === true
+            this.expandedCategories[type] === true
         );
-
     },
 
 
@@ -1283,7 +1099,6 @@ const editorMethods = {
 
         this.expandedCategories[type] =
             !this.expandedCategories[type];
-
     },
 
 
@@ -1294,10 +1109,8 @@ const editorMethods = {
 
                 this.expandedCategories[type] =
                     true;
-
             }
         );
-
     },
 
 
@@ -1308,10 +1121,8 @@ const editorMethods = {
 
                 this.expandedCategories[type] =
                     false;
-
             }
         );
-
     },
 
 
@@ -1319,31 +1130,24 @@ const editorMethods = {
 
         this.categories[type] =
             !this.categories[type];
-
     },
 
 
     countType(type) {
 
         return this.items.filter(
-            item => {
-
-                return (
-                    item.type === type &&
-                    !item.deleted
-                );
-
-            }
+            item =>
+                item.type === type &&
+                !item.deleted
         ).length;
-
     },
 
 
-    // =====================================================
-    // 選取項目
-    // =====================================================
-
     selectItem(uid) {
+
+        /*
+         * 切換前先提交目前內容。
+         */
 
         this.finishTypingHistory();
 
@@ -1364,21 +1168,18 @@ const editorMethods = {
             this.prepareSpecialProperties(
                 item
             );
-
         }
 
 
         this.refreshEditors();
 
-
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // 新增項目
-    // =====================================================
+    /* =========================================================
+       Add
+       ========================================================= */
 
     addItem(type) {
 
@@ -1409,18 +1210,14 @@ const editorMethods = {
             deleted: false,
 
             isNew: true
-
         };
 
 
-        this.items.push(
-            item
-        );
+        this.items.push(item);
 
 
         this.expandedCategories[type] =
             true;
-
 
         this.categories[type] =
             true;
@@ -1446,31 +1243,17 @@ const editorMethods = {
 
         this.refreshEditors();
 
-
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // 標記修改
-    //
-    // isTyping = true
-    // 代表 Raw / Formatted 文字輸入。
-    // =====================================================
+    /* =========================================================
+       Modified
+       ========================================================= */
 
-    markModified(isTyping = false) {
+    markModified() {
 
-        if (isTyping) {
-
-            this.recordTypingHistory();
-
-        }
-        else {
-
-            this.recordModifiedHistory();
-
-        }
+        this.recordModifiedHistory();
 
 
         this.dirty =
@@ -1481,28 +1264,22 @@ const editorMethods = {
 
             this.selectedItem.modified =
                 true;
-
         }
 
 
         this.statusMessage =
             "有未儲存的修改";
-
     },
 
 
-    // =====================================================
-    // Raw 編輯器
-    // =====================================================
+    /* =========================================================
+       RAW Input
+       ========================================================= */
 
     onRawInput(event) {
 
-        if (
-            !this.selectedItem
-        ) {
-
+        if (!this.selectedItem) {
             return;
-
         }
 
 
@@ -1511,12 +1288,11 @@ const editorMethods = {
 
 
         /*
-         * 直接保存使用者目前輸入內容。
+         * 這裡直接保存 RAW。
          *
-         * 不呼叫 refreshEditors()。
-         *
-         * 這是本次效能修正最重要的一點。
+         * 不重新建立 textarea。
          */
+
         this.rawEditorValue =
             value;
 
@@ -1525,119 +1301,201 @@ const editorMethods = {
             value;
 
 
-        this.markModified(
-            true
-        );
+        this.markModified();
 
 
         /*
-         * Raw 正在輸入時，
-         * 不需要立即格式化。
+         * RAW → FORMATTED
          *
-         * 稍微延遲後更新右側 Formatted。
+         * 延遲更新，
+         * 避免打字時一直重建編輯器。
          */
-        this.scheduleRawFormattedRefresh();
 
+        this.scheduleRawFormattedRefresh();
     },
 
 
-    // =====================================================
-    // Formatted 編輯器
-    // =====================================================
+    /* =========================================================
+       FORMATTED Input
+       ========================================================= */
 
     onFormattedInput(event) {
 
-        if (
-            !this.selectedItem
-        ) {
+        /*
+         * CodeMirror 現在自己管理輸入。
+         *
+         * 所以這個方法只保留給舊程式相容，
+         * 不再直接依賴 textarea.value。
+         */
 
+        if (!this.selectedItem) {
             return;
-
         }
 
 
-        const value =
-            event.target.value;
+        let value = "";
 
 
-        /*
-         * 非常重要：
-         *
-         * 直接保留 textarea 目前的內容。
-         *
-         * 不要立刻重新 format。
-         *
-         * 否則游標可能跳回去，
-         * 而且每個字都會重新處理整份文件。
-         */
+        if (
+            window.ZSCCodemirror &&
+            window.ZSCCodemirror.getInstance()
+        ) {
+
+            value =
+                window.ZSCCodemirror.getValue();
+
+        }
+        else if (
+            event &&
+            event.target
+        ) {
+
+            value =
+                event.target.value;
+        }
+
+
         this.formattedEditorValue =
             value;
 
+        this.formattedHighlightValue =
+            value;
 
-        this.selectedItem.content =
-            ZSCContent.unformat(
-                value
-            );
-
-
-        /*
-         * Raw 內容同步，
-         * 但不重新建立 Formatted。
-         */
-        this.rawEditorValue =
-            this.selectedItem.content;
-
-
-        this.markModified(
-            true
-        );
-
-
-        /*
-         * Syntax Highlight 使用 requestAnimationFrame
-         * 延後到瀏覽器準備繪製時再處理。
-         */
-        this.scheduleSyntaxHighlight(
-            value
-        );
-
+        this.markModified();
     },
 
 
-    // =====================================================
-    // Raw 編輯器更新
-    // =====================================================
+    /* =========================================================
+       RAW → FORMATTED 延遲更新
+       ========================================================= */
+
+    scheduleRawFormattedRefresh() {
+
+        if (this.__zscRawFormatTimer) {
+
+            clearTimeout(
+                this.__zscRawFormatTimer
+            );
+        }
+
+
+        this.__zscRawFormatTimer =
+            setTimeout(() => {
+
+                this.__zscRawFormatTimer =
+                    null;
+
+
+                if (!this.selectedItem) {
+                    return;
+                }
+
+
+                const input =
+                    document.getElementById(
+                        "raw-editor"
+                    );
+
+
+                /*
+                 * 只有使用者目前仍然在 RAW
+                 * 編輯器時才同步。
+                 */
+
+                if (
+                    input &&
+                    document.activeElement !== input
+                ) {
+                    return;
+                }
+
+
+                const formatted =
+                    ZSCContent.format(
+                        this.selectedItem.content ||
+                        ""
+                    );
+
+
+                this.formattedEditorValue =
+                    formatted;
+
+                this.formattedHighlightValue =
+                    formatted;
+
+
+                /*
+                 * 更新 CodeMirror。
+                 *
+                 * 注意：
+                 * 只有 RAW 正在編輯時才做。
+                 */
+
+                if (
+                    window.ZSCCodemirror &&
+                    window.ZSCCodemirror.getInstance()
+                ) {
+
+                    window.ZSCCodemirror
+                        .setValue(
+                            formatted
+                        );
+                }
+
+            }, 300);
+    },
+
+
+    /* =========================================================
+       Syntax Highlight
+       ========================================================= */
+
+    scheduleSyntaxHighlight(value) {
+
+        /*
+         * CodeMirror 已經負責語法顏色。
+         *
+         * 所以這裡不再操作舊的
+         * formatted-highlight。
+         */
+
+        this.formattedHighlightValue =
+            value;
+    },
+
+
+    /* =========================================================
+       Editor Refresh
+       ========================================================= */
 
     refreshRawEditor() {
 
-        if (
-            !this.selectedItem
-        ) {
+        if (!this.selectedItem) {
 
             this.rawEditorValue =
                 "";
 
             return;
-
         }
 
 
         this.rawEditorValue =
             this.selectedItem.content ||
             "";
-
     },
 
 
-    // =====================================================
-    // Formatted 編輯器更新
-    // =====================================================
+    /* =========================================================
+       CodeMirror FORMATTED
+       ========================================================= */
 
     refreshFormattedEditor() {
 
-        if (
-            !this.selectedItem
-        ) {
+        /*
+         * 沒有選取項目。
+         */
+
+        if (!this.selectedItem) {
 
             this.formattedEditorValue =
                 "";
@@ -1645,104 +1503,210 @@ const editorMethods = {
             this.formattedHighlightValue =
                 "";
 
-            return;
 
+            this.$nextTick(() => {
+
+                if (
+                    window.ZSCCodemirror &&
+                    window.ZSCCodemirror.getInstance()
+                ) {
+
+                    window.ZSCCodemirror
+                        .setValue("");
+                }
+
+            });
+
+            return;
         }
 
 
-        this.formattedEditorValue =
+        /*
+         * 先產生格式化內容。
+         */
+
+        const formatted =
             ZSCContent.format(
                 this.selectedItem.content ||
                 ""
             );
 
 
+        this.formattedEditorValue =
+            formatted;
+
         this.formattedHighlightValue =
-            this.formattedEditorValue;
+            formatted;
 
 
-        this.pendingHighlightValue =
-            this.formattedEditorValue;
+        /*
+         * 非常重要：
+         *
+         * Vue 必須先把
+         *
+         * #formatted-editor
+         *
+         * 建立出來。
+         */
 
-    },
+        this.$nextTick(() => {
+
+            if (
+                !window.ZSCCodemirror
+            ) {
+
+                console.error(
+                    "ZSCCodemirror 尚未載入"
+                );
+
+                return;
+            }
 
 
-    // =====================================================
-    // Syntax Highlight
-    // =====================================================
+            let cm =
+                window.ZSCCodemirror
+                    .getInstance();
 
-    refreshSyntaxHighlight() {
 
-        this.$nextTick(
-            () => {
+            /*
+             * 尚未初始化。
+             */
 
-                const input =
+            if (!cm) {
+
+                const textarea =
                     document.getElementById(
                         "formatted-editor"
                     );
 
 
-                const highlight =
-                    document.getElementById(
-                        "formatted-highlight"
+                if (!textarea) {
+
+                    console.warn(
+                        "找不到 #formatted-editor"
                     );
 
-
-                if (
-                    !input ||
-                    !highlight
-                ) {
-
                     return;
-
                 }
 
 
-                highlight.scrollTop =
-                    input.scrollTop;
+                console.log(
+                    "refreshFormattedEditor：初始化 CodeMirror"
+                );
 
 
-                highlight.scrollLeft =
-                    input.scrollLeft;
-
+                cm =
+                    window.ZSCCodemirror
+                        .init(
+                            textarea
+                        );
             }
-        );
 
+
+            /*
+             * CodeMirror 初始化完成後，
+             * 才放入內容。
+             */
+
+            if (cm) {
+
+                window.ZSCCodemirror
+                    .setValue(
+                        formatted
+                    );
+
+
+                /*
+                 * 確保游標不要停留在奇怪的位置。
+                 */
+
+                cm.setCursor({
+                    line: 0,
+                    ch: 0
+                });
+            }
+
+        });
     },
 
 
-    // =====================================================
-    // 編輯器同步
-    // =====================================================
+    /* =========================================================
+       Syntax Highlight
+       ========================================================= */
+
+    refreshSyntaxHighlight() {
+
+        /*
+         * 舊版 overlay 已經移除。
+         *
+         * CodeMirror 自己負責：
+         *
+         * 文字
+         * 顏色
+         * 捲動
+         * 語法標記
+         *
+         * 因此這裡故意不再尋找
+         * #formatted-highlight。
+         */
+
+        return;
+    },
+
+
+    /* =========================================================
+       Refresh All Editors
+       ========================================================= */
 
     refreshEditors() {
 
-        this.cancelEditorTimers();
+        /*
+         * 清除 RAW 延遲更新。
+         */
 
+        if (
+            this.__zscRawFormatTimer
+        ) {
+
+            clearTimeout(
+                this.__zscRawFormatTimer
+            );
+
+            this.__zscRawFormatTimer =
+                null;
+        }
+
+
+        /*
+         * RAW
+         */
 
         this.refreshRawEditor();
 
 
+        /*
+         * FORMATTED
+         */
+
         this.refreshFormattedEditor();
 
 
-        this.refreshSyntaxHighlight();
+        /*
+         * 舊 highlight 不再需要。
+         */
 
+        this.refreshSyntaxHighlight();
     },
 
 
-    // =====================================================
-    // 重設目前項目
-    // =====================================================
+    /* =========================================================
+       Reset
+       ========================================================= */
 
     resetSelectedItem() {
 
-        if (
-            !this.selectedItem
-        ) {
-
+        if (!this.selectedItem) {
             return;
-
         }
 
 
@@ -1751,17 +1715,16 @@ const editorMethods = {
                 "確定要放棄目前項目的修改嗎？"
             )
         ) {
-
             return;
-
         }
+
+
+        this.finishTypingHistory();
 
 
         if (
             this.selectedItem.isNew
         ) {
-
-            this.finishTypingHistory();
 
             this.saveHistory();
 
@@ -1783,69 +1746,74 @@ const editorMethods = {
 
             this.refreshEditors();
 
-
             this.updateDirty();
-
 
             this.updateHistorySnapshot();
 
             return;
-
         }
 
 
         /*
-         * 維持目前資料結構。
-         *
-         * 注意：
-         * 目前 items 裡的 content 就是即時資料，
-         * 因此原版這裡實際上並沒有真正回復
-         * 原始 content。
-         *
-         * 這裡先保持原有行為。
+         * 目前仍維持原本行為：
+         * 重新顯示目前 item。
          */
+
         this.refreshEditors();
 
-
         this.updateDirty();
-
     },
 
 
-    // =====================================================
-    // 套用
-    // =====================================================
+    /* =========================================================
+       Apply
+       ========================================================= */
 
     applyItem() {
 
-        if (
-            !this.selectedItem
-        ) {
-
+        if (!this.selectedItem) {
             return;
-
         }
 
+
+        /*
+         * CodeMirror 存在時，
+         * 一律以 CodeMirror 內容為準。
+         */
 
         if (
-            this.selectedItem.content !==
-            this.rawEditorValue
+            window.ZSCCodemirror &&
+            window.ZSCCodemirror.getInstance()
         ) {
 
-            this.finishTypingHistory();
+            this.commitFormattedEditor();
 
-            this.saveHistory();
+        }
+        else {
 
+            /*
+             * CodeMirror 尚未初始化時，
+             * 使用 RAW。
+             */
+
+            const rawInput =
+                document.getElementById(
+                    "raw-editor"
+                );
+
+
+            if (
+                rawInput &&
+                document.activeElement ===
+                    rawInput
+            ) {
+
+                this.commitRawEditor();
+            }
         }
 
 
-        this.selectedItem.content =
-            this.rawEditorValue;
-
-
-        this.markModified(
-            false
-        );
+        this.markModified();
 
 
         this.refreshEditors();
@@ -1856,20 +1824,17 @@ const editorMethods = {
 
 
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // 刪除
-    // =====================================================
+    /* =========================================================
+       Delete
+       ========================================================= */
 
     deleteItem() {
 
         if (!this.selectedItem) {
-
             return;
-
         }
 
 
@@ -1878,9 +1843,7 @@ const editorMethods = {
                 "確定要刪除目前項目嗎？"
             )
         ) {
-
             return;
-
         }
 
 
@@ -1908,7 +1871,6 @@ const editorMethods = {
 
             this.selectedItem.deleted =
                 true;
-
         }
 
 
@@ -1933,15 +1895,13 @@ const editorMethods = {
 
         this.refreshEditors();
 
-
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // 批量刪除
-    // =====================================================
+    /* =========================================================
+       Batch Delete
+       ========================================================= */
 
     deleteSelectedItems() {
 
@@ -1957,7 +1917,6 @@ const editorMethods = {
                 "目前沒有勾選任何項目";
 
             return;
-
         }
 
 
@@ -1978,12 +1937,10 @@ const editorMethods = {
             this.checkedDeleteUids =
                 [];
 
-
             this.statusMessage =
                 "目前沒有可以刪除的項目";
 
             return;
-
         }
 
 
@@ -1998,12 +1955,9 @@ const editorMethods = {
 
                 counts[item.type] =
                     0;
-
             }
 
-
             counts[item.type]++;
-
         }
 
 
@@ -2023,16 +1977,13 @@ const editorMethods = {
             !confirm(
                 "確定要刪除勾選的項目嗎？\n\n" +
                 summary +
-                "\n\n" +
-                "合計：" +
+                "\n\n合計：" +
                 targets.length +
                 " 個\n\n" +
                 "刪除後需要按「儲存」才會真正寫入 ZSC 檔案。"
             )
         ) {
-
             return;
-
         }
 
 
@@ -2050,27 +2001,21 @@ const editorMethods = {
                             item.uid
                         )
                     ) {
-
                         return true;
-
                     }
 
 
                     if (
                         item.isNew
                     ) {
-
                         return false;
-
                     }
 
 
                     item.deleted =
                         true;
 
-
                     return true;
-
                 }
             );
 
@@ -2084,7 +2029,6 @@ const editorMethods = {
 
             this.selectedUid =
                 null;
-
         }
 
 
@@ -2104,15 +2048,13 @@ const editorMethods = {
 
         this.refreshEditors();
 
-
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // 刪除分類全部
-    // =====================================================
+    /* =========================================================
+       Delete All
+       ========================================================= */
 
     deleteAllItems(type) {
 
@@ -2133,7 +2075,6 @@ const editorMethods = {
                 " 沒有可以刪除的項目";
 
             return;
-
         }
 
 
@@ -2141,16 +2082,13 @@ const editorMethods = {
             !confirm(
                 "確定要刪除全部 " +
                 type +
-                " 嗎？\n\n" +
-                "共 " +
+                " 嗎？\n\n共 " +
                 targets.length +
                 " 個項目。\n\n" +
                 "刪除後需要按「儲存」才會真正寫入 ZSC 檔案。"
             )
         ) {
-
             return;
-
         }
 
 
@@ -2167,27 +2105,21 @@ const editorMethods = {
                         item.type !== type ||
                         item.deleted
                     ) {
-
                         return true;
-
                     }
 
 
                     if (
                         item.isNew
                     ) {
-
                         return false;
-
                     }
 
 
                     item.deleted =
                         true;
 
-
                     return true;
-
                 }
             );
 
@@ -2215,7 +2147,6 @@ const editorMethods = {
 
             this.selectedUid =
                 null;
-
         }
 
 
@@ -2231,17 +2162,23 @@ const editorMethods = {
             " 個）";
 
 
+        /*
+         * 這裡原本錯誤地寫成：
+         *
+         * refreshFormattedEditor();
+         *
+         * 必須使用 this。
+         */
+
         this.refreshEditors();
 
-
         this.updateHistorySnapshot();
-
     },
 
 
-    // =====================================================
-    // Dirty
-    // =====================================================
+    /* =========================================================
+       Dirty
+       ========================================================= */
 
     updateDirty() {
 
@@ -2252,20 +2189,17 @@ const editorMethods = {
                     item.deleted ||
                     item.modified
             );
-
     },
 
 
-    // =====================================================
-    // 建立單一項目文字
-    // =====================================================
+    /* =========================================================
+       Build Raw
+       ========================================================= */
 
     buildItemRaw(item) {
 
         if (!item) {
-
             return "";
-
         }
 
 
@@ -2301,7 +2235,6 @@ const editorMethods = {
                 "} " +
                 zmudValue
             );
-
         }
 
 
@@ -2335,7 +2268,6 @@ const editorMethods = {
                 "} " +
                 zmudValue
             );
-
         }
 
 
@@ -2344,22 +2276,25 @@ const editorMethods = {
             item.content ||
             ""
         );
-
     },
 
 
-    // =====================================================
-    // 建立 ZSC
-    // =====================================================
+    /* =========================================================
+       Build ZSC
+       ========================================================= */
 
     buildZSC() {
 
-        let output =
-            "";
+        /*
+         * 儲存前提交目前編輯內容。
+         */
+
+        this.commitActiveEditor();
 
 
-        let cursor =
-            0;
+        let output = "";
+
+        let cursor = 0;
 
 
         for (
@@ -2384,7 +2319,6 @@ const editorMethods = {
 
 
                 continue;
-
             }
 
 
@@ -2412,7 +2346,6 @@ const editorMethods = {
 
 
                 continue;
-
             }
 
 
@@ -2424,9 +2357,7 @@ const editorMethods = {
                     this.buildItemRaw(
                         item
                     );
-
             }
-
         }
 
 
@@ -2437,13 +2368,12 @@ const editorMethods = {
 
 
         return output;
-
     },
 
 
-    // =====================================================
-    // 儲存
-    // =====================================================
+    /* =========================================================
+       Save
+       ========================================================= */
 
     async saveFile() {
 
@@ -2485,7 +2415,6 @@ const editorMethods = {
             ) {
 
                 name += ".zsc";
-
             }
 
 
@@ -2503,7 +2432,6 @@ const editorMethods = {
 
             link.href =
                 url;
-
 
             link.download =
                 name;
@@ -2545,7 +2473,6 @@ const editorMethods = {
 
                     item.isNew =
                         false;
-
                 }
             );
 
@@ -2572,15 +2499,13 @@ const editorMethods = {
                     error.message ||
                     error
                 );
-
         }
-
     },
 
 
-    // =====================================================
-    // 捲軸同步
-    // =====================================================
+    /* =========================================================
+       Scroll
+       ========================================================= */
 
     syncScroll(event) {
 
@@ -2589,14 +2514,11 @@ const editorMethods = {
 
 
         const other =
-            target.dataset
-                .scrollTarget;
+            target.dataset.scrollTarget;
 
 
         if (!other) {
-
             return;
-
         }
 
 
@@ -2607,9 +2529,7 @@ const editorMethods = {
 
 
         if (!element) {
-
             return;
-
         }
 
 
@@ -2619,46 +2539,18 @@ const editorMethods = {
 
         element.scrollLeft =
             target.scrollLeft;
-
     },
 
-
-    // =====================================================
-    // Syntax Highlight 捲軸
-    // =====================================================
 
     syncSyntaxScroll(event) {
 
-        const input =
-            event.target;
+        /*
+         * 舊版 Highlight overlay 已經取消。
+         */
 
-
-        const highlight =
-            document.getElementById(
-                "formatted-highlight"
-            );
-
-
-        if (!highlight) {
-
-            return;
-
-        }
-
-
-        highlight.scrollTop =
-            input.scrollTop;
-
-
-        highlight.scrollLeft =
-            input.scrollLeft;
-
+        return;
     },
 
-
-    // =====================================================
-    // 行號同步
-    // =====================================================
 
     syncLineNumbers(event) {
 
@@ -2674,15 +2566,12 @@ const editorMethods = {
 
 
         if (!lineNumbers) {
-
             return;
-
         }
 
 
         lineNumbers.scrollTop =
             textarea.scrollTop;
-
     }
 
 };

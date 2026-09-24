@@ -11,6 +11,21 @@
 
     <title>ZSC Editor</title>
 
+
+    <!-- =====================================================
+         CodeMirror CSS
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"
+    >
+
+
+    <!-- =====================================================
+         ZSC Editor CSS
+         ===================================================== -->
+
     <link
         rel="stylesheet"
         href="style.css"
@@ -18,9 +33,11 @@
 
 </head>
 
+
 <body>
 
 <div id="app">
+
 
     <!-- =====================================================
          頂端工具列
@@ -35,12 +52,14 @@
             開啟
         </button>
 
+
         <button
             type="button"
             @click="newFile"
         >
             新增
         </button>
+
 
         <button
             type="button"
@@ -49,7 +68,9 @@
             儲存
         </button>
 
+
         <div class="toolbar-separator"></div>
+
 
         <!-- Undo -->
 
@@ -63,6 +84,7 @@
             ↶ 上一步
         </button>
 
+
         <!-- Redo -->
 
         <button
@@ -75,14 +97,18 @@
             ↷ 下一步
         </button>
 
+
         <div class="toolbar-separator"></div>
+
 
         <!-- 編碼 -->
 
         <label class="toolbar-label">
+
             讀取：
 
             <select v-model="readEncoding">
+
                 <option value="auto">
                     自動
                 </option>
@@ -94,13 +120,18 @@
                 <option value="utf-8">
                     UTF-8
                 </option>
+
             </select>
+
         </label>
 
+
         <label class="toolbar-label">
+
             儲存：
 
             <select v-model="saveEncoding">
+
                 <option value="big5">
                     Big5
                 </option>
@@ -108,14 +139,19 @@
                 <option value="utf-8">
                     UTF-8
                 </option>
+
             </select>
+
         </label>
 
+
         <div class="toolbar-spacer"></div>
+
 
         <span class="encoding-info">
             {{ encodingText }}
         </span>
+
 
         <span
             v-if="dirty"
@@ -127,6 +163,7 @@
     </div>
 
 
+
     <!-- =====================================================
          檔案拖曳提示
          ===================================================== -->
@@ -135,10 +172,13 @@
         v-if="dragging"
         class="drop-overlay"
     >
+
         <div class="drop-message">
             將 .zsc 檔案拖曳到這裡
         </div>
+
     </div>
+
 
 
     <!-- =====================================================
@@ -154,7 +194,10 @@
 
         <aside class="sidebar">
 
-            <!-- 搜尋 -->
+
+            <!-- =================================================
+                 搜尋
+                 ================================================= -->
 
             <div class="sidebar-search">
 
@@ -167,7 +210,10 @@
             </div>
 
 
-            <!-- 分類控制 -->
+
+            <!-- =================================================
+                 分類控制
+                 ================================================= -->
 
             <div class="category-toolbar">
 
@@ -178,6 +224,7 @@
                     全展開
                 </button>
 
+
                 <button
                     type="button"
                     @click="collapseAllCategories"
@@ -186,6 +233,7 @@
                 </button>
 
             </div>
+
 
 
             <!-- =================================================
@@ -206,18 +254,21 @@
                     刪除勾選
                 </button>
 
+
                 <span class="batch-delete-count">
 
                     已勾選
-                    {{ checkedDeleteUids
-                        ? checkedDeleteUids.length
-                        : 0
+                    {{
+                        checkedDeleteUids
+                            ? checkedDeleteUids.length
+                            : 0
                     }}
                     個
 
                 </span>
 
             </div>
+
 
 
             <!-- =================================================
@@ -238,9 +289,15 @@
                         class="tree-group"
                     >
 
-                        <!-- 分類標題 -->
+
+                        <!-- =================================================
+                             分類標題
+                             ================================================= -->
 
                         <div class="tree-group-title">
+
+
+                            <!-- 分類名稱 -->
 
                             <div
                                 class="tree-group-main"
@@ -259,9 +316,11 @@
 
                                 </span>
 
+
                                 <span class="tree-group-name">
                                     {{ type }}
                                 </span>
+
 
                                 <span class="tree-count">
                                     {{ countType(type) }}
@@ -270,7 +329,27 @@
                             </div>
 
 
-                            <!-- 刪除全部 -->
+
+                            <!-- =================================================
+                                 新增
+                                 ================================================= -->
+
+                            <button
+                                type="button"
+                                class="add-item-button"
+                                @click.stop="
+                                    addItem(type)
+                                "
+                                title="新增一個空白項目"
+                            >
+                                ＋
+                            </button>
+
+
+
+                            <!-- =================================================
+                                 刪除全部
+                                 ================================================= -->
 
                             <button
                                 type="button"
@@ -289,7 +368,10 @@
                         </div>
 
 
-                        <!-- 分類項目 -->
+
+                        <!-- =================================================
+                             分類項目
+                             ================================================= -->
 
                         <div
                             v-if="
@@ -312,6 +394,7 @@
                                     selectItem(item.uid)
                                 "
                             >
+
 
                                 <!-- 勾選刪除 -->
 
@@ -365,13 +448,17 @@
         </aside>
 
 
+
         <!-- =================================================
              右側編輯器
              ================================================= -->
 
         <main class="editor-panel">
 
-            <!-- 沒有選取項目 -->
+
+            <!-- =================================================
+                 沒有選取項目
+                 ================================================= -->
 
             <div
                 v-if="!selectedItem"
@@ -382,23 +469,28 @@
                     尚未選取項目
                 </div>
 
+
                 <div class="empty-editor-text">
 
                     請從左側選擇項目，
-                    或使用上方功能新增項目。
+                    或使用分類旁的「＋」新增項目。
 
                 </div>
 
             </div>
 
 
-            <!-- 有選取項目 -->
+
+            <!-- =================================================
+                 有選取項目
+                 ================================================= -->
 
             <template v-else>
 
-                <!-- =========================================
+
+                <!-- =================================================
                      編輯器標題
-                     ========================================= -->
+                     ================================================= -->
 
                 <div class="editor-title-bar">
 
@@ -408,9 +500,11 @@
                             {{ selectedItem.type }}
                         </span>
 
+
                         <span class="editor-item-name">
                             {{ getItemName(selectedItem) }}
                         </span>
+
 
                         <span
                             v-if="
@@ -421,6 +515,7 @@
                         >
                             {{ selectedItem.triggerPattern }}
                         </span>
+
 
                         <span
                             v-if="selectedItem.modified"
@@ -441,12 +536,14 @@
                             放棄修改
                         </button>
 
+
                         <button
                             type="button"
                             @click="applyItem"
                         >
                             套用
                         </button>
+
 
                         <button
                             type="button"
@@ -461,9 +558,32 @@
                 </div>
 
 
-                <!-- =========================================
-                     特殊屬性
-                     ========================================= -->
+
+                <!-- =================================================
+                     一般項目名稱
+                     ================================================= -->
+
+                <div class="special-properties">
+
+                    <label>
+
+                        名稱：
+
+                        <input
+                            v-model="selectedItem.name"
+                            @input="markModified()"
+                            placeholder="輸入項目名稱"
+                        >
+
+                    </label>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     TRIGGER 特殊屬性
+                     ================================================= -->
 
                 <div
                     v-if="selectedItem.type === 'TRIGGER'"
@@ -471,6 +591,7 @@
                 >
 
                     <label>
+
                         觸發文字：
 
                         <input
@@ -484,7 +605,9 @@
 
                     </label>
 
+
                     <label>
+
                         ZMUD 值：
 
                         <input
@@ -501,12 +624,18 @@
                 </div>
 
 
+
+                <!-- =================================================
+                     ALARM 特殊屬性
+                     ================================================= -->
+
                 <div
                     v-if="selectedItem.type === 'ALARM'"
                     class="special-properties"
                 >
 
                     <label>
+
                         間隔：
 
                         <input
@@ -524,7 +653,9 @@
 
                     </label>
 
+
                     <label>
+
                         ZMUD 值：
 
                         <input
@@ -541,13 +672,15 @@
                 </div>
 
 
-                <!-- =========================================
+
+                <!-- =================================================
                      RAW 編輯器
-                     ========================================= -->
+                     ================================================= -->
 
                 <div class="editor-section-title">
                     RAW
                 </div>
+
 
                 <div class="raw-editor-wrapper">
 
@@ -564,13 +697,17 @@
                 </div>
 
 
-                <!-- =========================================
+
+                <!-- =================================================
                      FORMATTED
-                     ========================================= -->
+                     ================================================= -->
 
-                <div class="editor-section-title">
+                <div class="editor-section-title formatted-title">
 
-                    FORMATTED
+                    <span>
+                        FORMATTED
+                    </span>
+
 
                     <span class="line-count">
 
@@ -578,36 +715,290 @@
 
                     </span>
 
+
+                    <!-- =================================================
+                         快速插入按鈕
+                         ================================================= -->
+
+                    <button
+                        type="button"
+                        class="quick-insert-button"
+                        @click.stop="
+                            toggleQuickInsert()
+                        "
+                        title="插入常用 ZSC 語法"
+                    >
+
+                        ＋ 快速插入
+
+                    </button>
+
                 </div>
 
 
-                <div class="highlight-editor">
 
-                    <!-- 語法高亮 -->
+                <!-- =================================================
+                     CodeMirror
+                     ================================================= -->
 
-                    <pre
-                        id="formatted-highlight"
-                        class="formatted-highlight"
-                        v-html="
-                            formattedHighlighted
-                        "
-                    ></pre>
-
-
-                    <!-- 真正可輸入的 textarea -->
+                <div class="codemirror-editor-wrap">
 
                     <textarea
                         id="formatted-editor"
-                        class="
-                            editor-textarea
-                            formatted-input
-                        "
-                        :value="formattedEditorValue"
-                        @input="onFormattedInput"
-                        @blur="finishTypingHistory"
-                        @scroll="syncSyntaxScroll"
                         spellcheck="false"
                     ></textarea>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     快速插入面板
+                     ================================================= -->
+
+                <div
+                    v-if="quickInsertOpen"
+                    class="quick-insert-panel"
+                    @click.stop
+                >
+
+
+                    <!-- =================================================
+                         快速插入標題
+                         ================================================= -->
+
+                    <div class="quick-insert-header">
+
+                        <div class="quick-insert-header-title">
+
+                            <button
+                                v-if="
+                                    quickInsertGroupId
+                                "
+                                type="button"
+                                class="quick-insert-back-button"
+                                @click="
+                                    backQuickInsertGroups()
+                                "
+                                title="返回分類"
+                            >
+                                ←
+                            </button>
+
+
+                            <span>
+
+                                {{
+                                    quickInsertCurrentGroup
+                                        ? quickInsertCurrentGroup.name
+                                        : "快速插入"
+                                }}
+
+                            </span>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="quick-insert-close-button"
+                            @click="
+                                closeQuickInsert()
+                            "
+                            title="關閉"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         搜尋
+                         ================================================= -->
+
+                    <div class="quick-insert-search">
+
+                        <input
+                            v-model="
+                                quickInsertSearch
+                            "
+                            type="text"
+                            placeholder="搜尋語法、名稱或說明..."
+                            spellcheck="false"
+                        >
+
+
+                        <button
+                            v-if="
+                                quickInsertSearch
+                            "
+                            type="button"
+                            class="quick-insert-clear"
+                            @click="
+                                clearQuickInsertSearch()
+                            "
+                            title="清除搜尋"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         分類列表
+                         ================================================= -->
+
+                    <div
+                        v-if="
+                            !quickInsertGroupId
+                        "
+                        class="quick-insert-list"
+                    >
+
+                        <button
+                            v-for="
+                                group in quickInsertGroups
+                            "
+                            :key="group.id"
+                            type="button"
+                            class="quick-insert-group"
+                            @click="
+                                selectQuickInsertGroup(group)
+                            "
+                        >
+
+                            <span class="quick-insert-group-name">
+                                {{ group.name }}
+                            </span>
+
+
+                            <span class="quick-insert-group-arrow">
+                                ▶
+                            </span>
+
+                        </button>
+
+
+                        <div
+                            v-if="
+                                quickInsertGroups.length === 0
+                            "
+                            class="quick-insert-empty"
+                        >
+
+                            尚未載入 ZSC 語法資料。
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         語法列表
+                         ================================================= -->
+
+                    <div
+                        v-else
+                        class="quick-insert-list"
+                    >
+
+                        <button
+                            v-for="
+                                item in quickInsertItems
+                            "
+                            :key="
+                                item.id ||
+                                item.syntax ||
+                                item.name
+                            "
+                            type="button"
+                            class="quick-insert-item"
+                            :class="{
+                                selected:
+                                    quickInsertSelectedItem === item
+                            }"
+                            @click="
+                                selectQuickInsertItem(item)
+                            "
+                            @dblclick="
+                                insertQuickCommand(item)
+                            "
+                        >
+
+                            <span class="quick-insert-item-syntax">
+
+                                {{ item.syntax || item.name }}
+
+                            </span>
+
+
+                            <span
+                                v-if="
+                                    item.description
+                                "
+                                class="quick-insert-item-description"
+                            >
+
+                                {{ item.description }}
+
+                            </span>
+
+                        </button>
+
+
+                        <div
+                            v-if="
+                                quickInsertItems.length === 0
+                            "
+                            class="quick-insert-empty"
+                        >
+
+                            找不到符合的語法。
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         底部操作
+                         ================================================= -->
+
+                    <div class="quick-insert-footer">
+
+                        <span>
+
+                            {{
+                                quickInsertGroupId
+                                    ? "雙擊語法即可插入"
+                                    : "選擇分類"
+                            }}
+
+                        </span>
+
+
+                        <button
+                            v-if="
+                                quickInsertSelectedItem
+                            "
+                            type="button"
+                            class="quick-insert-insert-button"
+                            @click="
+                                insertSelectedQuickCommand()
+                            "
+                        >
+
+                            插入
+
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -616,6 +1007,7 @@
         </main>
 
     </div>
+
 
 
     <!-- =====================================================
@@ -628,7 +1020,9 @@
             {{ statusMessage }}
         </span>
 
+
         <span class="status-spacer"></span>
+
 
         <span
             v-if="canUndo"
@@ -637,12 +1031,14 @@
             Undo {{ undoCount }}
         </span>
 
+
         <span
             v-if="canRedo"
             class="history-status"
         >
             Redo {{ redoCount }}
         </span>
+
 
         <span
             v-if="fileName"
@@ -656,11 +1052,13 @@
 </div>
 
 
+
 <!-- =========================================================
      Vue
      ========================================================= -->
 
 <script src="https://unpkg.com/vue@3.5.43/dist/vue.global.prod.js"></script>
+
 
 
 <!-- =========================================================
@@ -671,7 +1069,26 @@
 <script src="parser.js"></script>
 <script src="content.js"></script>
 <script src="editor.js"></script>
+<script src="zsc-commands.js"></script>
+
+
+
+<!-- =========================================================
+     CodeMirror
+     ========================================================= -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+
+<script src="zsc-codemirror.js"></script>
+
+
+
+<!-- =========================================================
+     Vue App
+     ========================================================= -->
+
 <script src="app.js"></script>
+
 
 </body>
 </html>
