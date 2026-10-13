@@ -606,6 +606,101 @@
                     </label>
 
 
+					<div class="trigger-options">
+
+						<div class="trigger-option-group">
+							<strong>啟動後：</strong>
+
+							<label>
+								<input
+									type="radio"
+									name="trigger-start"
+									:checked="selectedItem.triggerOptions.enabled"
+									@change="setTriggerStartMode('enabled')"
+								>
+								開啟
+							</label>
+
+							<label>
+								<input
+									type="radio"
+									name="trigger-start"
+									:checked="!selectedItem.triggerOptions.enabled &&
+											  !selectedItem.triggerOptions.disabled"
+									@change="setTriggerStartMode('default')"
+								>
+								預設
+							</label>
+
+							<label>
+								<input
+									type="radio"
+									name="trigger-start"
+									:checked="selectedItem.triggerOptions.disabled"
+									@change="setTriggerStartMode('disabled')"
+								>
+								關閉
+							</label>
+						</div>
+
+						
+						<div class="trigger-option-group">
+							<strong>觸發：</strong>
+
+							<label>
+								<input
+									type="checkbox"
+									v-model="selectedItem.triggerOptions.nextLine"
+									@change="updateTriggerFlags()"
+								>
+								下一列
+							</label>
+
+							<label>
+								<input
+									type="checkbox"
+									v-model="selectedItem.triggerOptions.promptLine"
+									@change="updateTriggerFlags()"
+								>
+								提示列
+							</label>
+						</div>
+
+
+						<div class="trigger-option-group">
+							<strong>其他項目：</strong>
+
+							<label>
+								<input
+									type="checkbox"
+									v-model="selectedItem.triggerOptions.caseSensitive"
+									@change="updateTriggerFlags()"
+								>
+								大小寫區分
+							</label>
+
+							<label>
+								<input
+									type="checkbox"
+									v-model="selectedItem.triggerOptions.exactMatch"
+									@change="updateTriggerFlags()"
+								>
+								逐字觸發
+							</label>
+
+							<label>
+								<input
+									type="checkbox"
+									v-model="selectedItem.triggerOptions.reentrant"
+									@change="updateTriggerFlags()"
+								>
+								觸發時再次執行
+							</label>
+						</div>
+
+					</div>
+
+
                     <label>
 
                         ZMUD 值：
@@ -614,9 +709,7 @@
                             v-model="
                                 selectedItem.zmudValue
                             "
-                            @input="
-                                markModified()
-                            "
+                            @input="syncTriggerOptionsFromValue(); markModified()"
                         >
 
                     </label>

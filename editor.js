@@ -2,6 +2,108 @@
    ZSC Editor Methods
    ========================================================= */
 
+
+/* =========================================================
+   TRIGGER 旗標轉換
+   ========================================================= */
+
+const TRIGGER_FLAGS = {
+    ENABLED: 2,
+    DISABLED: 32,
+    NEXT_LINE: 4,
+    PROMPT_LINE: 64,
+    CASE_SENSITIVE: 128,
+    EXACT_MATCH: 256,
+    REENTRANT: 512
+};
+
+/*
+ * 將數字轉成選項。
+ * 基本旗標 1 不顯示成選項。
+ */
+function parseTriggerFlags(value) {
+    const flags = Number(value);
+
+    const safeFlags =
+        Number.isFinite(flags) && flags >= 0
+            ? Math.trunc(flags)
+            : 1;
+
+    return {
+        enabled:
+            (safeFlags & TRIGGER_FLAGS.ENABLED) !== 0,
+
+        disabled:
+            (safeFlags & TRIGGER_FLAGS.DISABLED) !== 0,
+
+        nextLine:
+            (safeFlags & TRIGGER_FLAGS.NEXT_LINE) !== 0,
+
+        promptLine:
+            (safeFlags & TRIGGER_FLAGS.PROMPT_LINE) !== 0,
+
+        caseSensitive:
+            (safeFlags & TRIGGER_FLAGS.CASE_SENSITIVE) !== 0,
+
+        exactMatch:
+            (safeFlags & TRIGGER_FLAGS.EXACT_MATCH) !== 0,
+
+        reentrant:
+            (safeFlags & TRIGGER_FLAGS.REENTRANT) !== 0
+    };
+}
+
+/*
+ * 將選項轉回數字。
+ * 保留目前尚未識別的其他旗標。
+ */
+function buildTriggerFlags(options, originalValue) {
+    const original = Number(originalValue);
+
+    const base =
+        Number.isFinite(original) && original >= 0
+            ? Math.trunc(original)
+            : 1;
+
+    const knownMask = Object.values(TRIGGER_FLAGS)
+        .reduce((mask, bit) => mask | bit, 1);
+
+    let result = base & ~knownMask;
+
+    result |= 1;
+
+    if (options.enabled) {
+        result |= TRIGGER_FLAGS.ENABLED;
+    }
+
+    if (options.disabled) {
+        result |= TRIGGER_FLAGS.DISABLED;
+    }
+
+    if (options.nextLine) {
+        result |= TRIGGER_FLAGS.NEXT_LINE;
+    }
+
+    if (options.promptLine) {
+        result |= TRIGGER_FLAGS.PROMPT_LINE;
+    }
+
+    if (options.caseSensitive) {
+        result |= TRIGGER_FLAGS.CASE_SENSITIVE;
+    }
+
+    if (options.exactMatch) {
+        result |= TRIGGER_FLAGS.EXACT_MATCH;
+    }
+
+    if (options.reentrant) {
+        result |= TRIGGER_FLAGS.REENTRANT;
+    }
+
+    return result;
+}
+
+
 const editorMethods = {
 
     /* =========================================================
@@ -156,6 +258,7 @@ const editorMethods = {
             this.prepareSpecialProperties(item);
         }
 
+
         this.refreshEditors();
 
         this.historyRestoring = false;
@@ -164,6 +267,89 @@ const editorMethods = {
 
         this.typingHistoryStarted = false;
     },
+	
+/* =========================================================
+		   TRIGGER 旗標同步
+		   ========================================================= */
+
+		/*
+		 * 手動修改數字時，同步選項。
+		 */
+		syncTriggerOptionsFromValue() {
+			if (!this.selectedItem ||
+				this.selectedItem.type !== "TRIGGER") {
+				return;
+			}
+
+			this.selectedItem.triggerOptions =
+				parseTriggerFlags(this.selectedItem.zmudValue);
+		},
+
+		/*
+		 * 選擇啟動模式：
+		 * enabled、disabled、default。
+		 */
+		setTriggerStartMode(mode) {
+			if (!this.selectedItem ||
+				this.selectedItem.type !== "TRIGGER") {
+				return;
+			}
+
+			const options = this.selectedItem.triggerOptions;
+
+			options.enabled = mode === "enabled";
+			options.disabled = mode === "disabled";
+
+			this.updateTriggerFlags();
+		},
+
+		/*
+		 * 選擇觸發模式：
+		 * none、nextLine、promptLine。
+		 */
+		/*setTriggerMode(mode) {
+			if (!this.selectedItem ||
+				this.selectedItem.type !== "TRIGGER") {
+				return;
+			}
+
+			const options = this.selectedItem.triggerOptions;
+
+			options.nextLine = mode === "nextLine";
+			options.promptLine = mode === "promptLine";
+
+			this.updateTriggerFlags();
+		},*/
+
+		/*
+		 * 選項 → 數字。
+		 */
+		
+	updateTriggerFlags() {
+		if (
+			!this.selectedItem ||
+			this.selectedItem.type !== "TRIGGER"
+		) {
+			return;
+		}
+
+		const item = this.selectedItem;
+		const options = item.triggerOptions;
+
+		if (!options) {
+			return;
+		}
+
+		item.zmudValue = String(
+			buildTriggerFlags(
+				options,
+				item.zmudValue
+			)
+		);
+
+		this.markModified();
+	},
+
 
 
     undo() {
@@ -705,6 +891,10 @@ const editorMethods = {
                 item.zmudValue =
                     "";
             }
+
+            item.triggerOptions = parseTriggerFlags(
+                item.zmudValue
+            );
         }
 
 
