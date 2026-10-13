@@ -2428,37 +2428,36 @@ const editorMethods = {
         }
 
 
-        if (
-            item.type === "TRIGGER"
-        ) {
+        
+		if (
+			item.type === "TRIGGER"
+		) {
 
-            const triggerPattern =
-                item.triggerPattern || "";
+			const triggerPattern =
+				item.triggerPattern || "";
 
+			const content =
+				item.content || "";
 
-            const content =
-                item.content || "";
+			const name =
+				item.name || "";
 
+			const zmudValue =
+				item.zmudValue || "";
 
-            const name =
-                item.name || "";
+			const raw =
+				"#TRIGGER {" +
+				triggerPattern +
+				"} {" +
+				content +
+				"} {" +
+				name +
+				"} " +
+				zmudValue;
 
+			return raw;
+		}
 
-            const zmudValue =
-                item.zmudValue || "";
-
-
-            return (
-                "#TRIGGER {" +
-                triggerPattern +
-                "} {" +
-                content +
-                "} {" +
-                name +
-                "} " +
-                zmudValue
-            );
-        }
 
 
         return (
